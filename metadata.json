@@ -1,0 +1,5 @@
+{
+  "name": "NeonSort AI",
+  "description": "An interactive, game-like sorting algorithm visualizer with real-time AI explanations.",
+  "requestFramePermissions": []
+}
