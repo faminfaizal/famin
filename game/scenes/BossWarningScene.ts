@@ -82,15 +82,12 @@ export class BossWarningScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // PROCEED button
-    const proceedBtn = this.createButton(GAME_WIDTH / 2 - 140, 430, 'PROCEED', 0xcc2222, 210, 56, '#ffcccc');
-    proceedBtn.on('pointerdown', () => {
+    this.createButton(GAME_WIDTH / 2 - 140, 430, 'PROCEED', 0xcc2222, 210, 56, '#ffcccc', () => {
       audioManager.playButton();
       this.scene.start('BossFightScene');
     });
 
-    // Save & Menu button
-    const menuBtn = this.createButton(GAME_WIDTH / 2 + 110, 430, 'Save & Menu', 0x555555, 210, 56, '#dddddd');
-    menuBtn.on('pointerdown', () => {
+    this.createButton(GAME_WIDTH / 2 + 110, 430, 'Save & Menu', 0x555555, 210, 56, '#dddddd', () => {
       audioManager.playButton();
       const s = Settings.getInstance();
       s.savedLevel = 19;
@@ -98,15 +95,13 @@ export class BossWarningScene extends Phaser.Scene {
       this.scene.start('MainMenuScene');
     });
 
-    // Settings button
-    const settingsBtn = this.createButton(GAME_WIDTH / 2, 510, 'SETTINGS', 0x2266cc, 160, 46, '#aaccff');
-    settingsBtn.on('pointerdown', () => {
+    this.createButton(GAME_WIDTH / 2, 510, 'SETTINGS', 0x2266cc, 160, 46, '#aaccff', () => {
       audioManager.playButton();
       this.scene.launch('SettingsScene');
     });
   }
 
-  private createButton(x: number, y: number, label: string, bgColor: number, w: number, h: number, textColor = '#000000'): Phaser.GameObjects.Container {
+  private createButton(x: number, y: number, label: string, bgColor: number, w: number, h: number, textColor = '#000000', onClick?: () => void): Phaser.GameObjects.Container {
     const container = this.add.container(x, y);
     const bg = this.add.rectangle(0, 0, w, h, bgColor).setInteractive({ useHandCursor: true });
     const border = this.add.graphics();
@@ -119,6 +114,7 @@ export class BossWarningScene extends Phaser.Scene {
     }).setOrigin(0.5);
     container.add([bg, border, text]);
 
+    if (onClick) bg.on('pointerdown', onClick);
     bg.on('pointerover', () => {
       this.tweens.add({ targets: container, scaleX: 1.05, scaleY: 1.05, duration: 80 });
     });
