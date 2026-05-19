@@ -94,8 +94,7 @@ export class VictoryScene extends Phaser.Scene {
     }
 
     // Play Again button
-    const playAgainBtn = this.createButton(GAME_WIDTH / 2 - 130, 480, 'PLAY AGAIN', 0x22bb55, 220, 56);
-    playAgainBtn.on('pointerdown', () => {
+    this.createButton(GAME_WIDTH / 2 - 130, 480, 'PLAY AGAIN', 0x22bb55, 220, 56, () => {
       audioManager.playButton();
       audioManager.init();
       const settings = Settings.getInstance();
@@ -107,9 +106,7 @@ export class VictoryScene extends Phaser.Scene {
       this.scene.start('GameScene', { level: 1 });
     });
 
-    // Main Menu button
-    const menuBtn = this.createButton(GAME_WIDTH / 2 + 130, 480, 'MAIN MENU', 0x2266cc, 220, 56);
-    menuBtn.on('pointerdown', () => {
+    this.createButton(GAME_WIDTH / 2 + 130, 480, 'MAIN MENU', 0x2266cc, 220, 56, () => {
       audioManager.playButton();
       this.scene.start('MainMenuScene');
     });
@@ -174,7 +171,7 @@ export class VictoryScene extends Phaser.Scene {
     }
   }
 
-  private createButton(x: number, y: number, label: string, color: number, w: number, h: number): Phaser.GameObjects.Container {
+  private createButton(x: number, y: number, label: string, color: number, w: number, h: number, onClick?: () => void): Phaser.GameObjects.Container {
     const container = this.add.container(x, y).setDepth(10);
     const bg = this.add.rectangle(0, 0, w, h, color).setInteractive({ useHandCursor: true });
     const border = this.add.graphics();
@@ -186,6 +183,7 @@ export class VictoryScene extends Phaser.Scene {
     }).setOrigin(0.5);
     container.add([bg, border, text]);
 
+    if (onClick) bg.on('pointerdown', onClick);
     bg.on('pointerover', () => {
       this.tweens.add({ targets: container, scaleX: 1.06, scaleY: 1.06, duration: 80 });
     });

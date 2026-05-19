@@ -76,18 +76,15 @@ export class MainMenuScene extends Phaser.Scene {
     const playLabel = showContinue ? `Continue (Level ${settings.savedLevel})` : 'PLAY';
     const startLevel = showContinue ? settings.savedLevel : 1;
 
-    const playBtn = this.createButton(GAME_WIDTH / 2, 300, playLabel, 0x22bb55, 200, 56);
-    playBtn.on('pointerdown', () => {
+    this.createButton(GAME_WIDTH / 2, 300, playLabel, 0x22bb55, 200, 56, () => {
       audioManager.init();
       audioManager.playButton();
       audioManager.startMusic();
       this.scene.start('GameScene', { level: startLevel });
     });
 
-    // If continue shown, also show "New Game" button
     if (showContinue) {
-      const newGameBtn = this.createButton(GAME_WIDTH / 2, 370, 'New Game', 0x44aa88, 200, 48);
-      newGameBtn.on('pointerdown', () => {
+      this.createButton(GAME_WIDTH / 2, 370, 'New Game', 0x44aa88, 200, 48, () => {
         audioManager.init();
         audioManager.playButton();
         audioManager.startMusic();
@@ -96,8 +93,7 @@ export class MainMenuScene extends Phaser.Scene {
     }
 
     const settingsY = showContinue ? 440 : 380;
-    const settingsBtn = this.createButton(GAME_WIDTH / 2, settingsY, 'SETTINGS', 0x2266cc, 200, 56);
-    settingsBtn.on('pointerdown', () => {
+    this.createButton(GAME_WIDTH / 2, settingsY, 'SETTINGS', 0x2266cc, 200, 56, () => {
       audioManager.init();
       audioManager.playButton();
       this.scene.launch('SettingsScene');
@@ -162,11 +158,10 @@ export class MainMenuScene extends Phaser.Scene {
     }
   }
 
-  private createButton(x: number, y: number, label: string, color: number, w: number, h: number): Phaser.GameObjects.Container {
+  private createButton(x: number, y: number, label: string, color: number, w: number, h: number, onClick: () => void): Phaser.GameObjects.Container {
     const container = this.add.container(x, y);
 
     const bg = this.add.rectangle(0, 0, w, h, color).setInteractive({ useHandCursor: true });
-    // Border
     const border = this.add.graphics();
     border.lineStyle(3, 0x000000, 1);
     border.strokeRect(-w / 2, -h / 2, w, h);
@@ -178,6 +173,7 @@ export class MainMenuScene extends Phaser.Scene {
 
     container.add([bg, border, text]);
 
+    bg.on('pointerdown', onClick);
     bg.on('pointerover', () => {
       bg.setFillStyle(Phaser.Display.Color.IntegerToColor(color).lighten(20).color);
       this.tweens.add({ targets: container, scaleX: 1.05, scaleY: 1.05, duration: 80 });
