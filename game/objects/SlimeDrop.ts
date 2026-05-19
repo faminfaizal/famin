@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
-import { TILE_SIZE, HUD_HEIGHT } from '../config';
+import { HUD_HEIGHT } from '../config';
 
-const PUDDLE_SIZE = TILE_SIZE * 3;   // 96px — 3×3 tiles
+const PUDDLE_SIZE = 96;              // 3×3 tiles (3 × TILE_SIZE 32px)
 const DROP_CYCLE = 4500;             // ms between puddle spawns
 const WARNING_DURATION = 1100;       // ms warning is shown before drop
 const PUDDLE_LIFETIME = 8000;        // ms each puddle persists
