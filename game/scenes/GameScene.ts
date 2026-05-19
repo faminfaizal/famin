@@ -316,10 +316,12 @@ export class GameScene extends Phaser.Scene {
     this.candyCollected = true;
 
     audioManager.playCandyPickup();
+    const candyX = this.candy.x;
+    const candyY = this.candy.y;
     this.candy.destroy();
 
     // Confetti particles
-    this.spawnConfetti(this.candy.x, this.candy.y);
+    this.spawnConfetti(candyX, candyY);
 
     // Player bounce
     this.tweens.add({
