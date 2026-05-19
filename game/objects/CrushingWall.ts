@@ -2,21 +2,33 @@ import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, HUD_HEIGHT, TILE_SIZE } from '../config';
 
 export class CrushingWall {
-  private scene: Phaser.Scene;
   private wall: Phaser.GameObjects.Rectangle;
   private physWall: Phaser.Physics.Arcade.Image;
-  private cooldown: number;
-  private timer = 0;
-  private crushing = false;
+  private speed: number;
+  private velX: number;
   readonly wallObj: Phaser.Physics.Arcade.Image;
 
-  constructor(scene: Phaser.Scene, cooldownSeconds: number) {
-    this.scene = scene;
-    this.cooldown = cooldownSeconds * 1000;
-    const h = GAME_HEIGHT - HUD_HEIGHT;
-    const w = TILE_SIZE * 3;
+  private readonly minX: number;
+  private readonly maxX: number;
+  private readonly wallW: number;
+  private readonly wallH: number;
 
-    // Ensure a small pixel texture exists for physics image
+  constructor(scene: Phaser.Scene, cooldownSeconds: number, levelSeed: number) {
+    const mazeH = GAME_HEIGHT - HUD_HEIGHT;
+    this.wallH = mazeH * 0.25;
+    this.wallW = TILE_SIZE * 2;
+
+    // Speed scales with difficulty (lower cd = faster). Range: ~60–100 px/s
+    this.speed = 60 + Math.max(0, (3.0 - cooldownSeconds)) * 25;
+    this.velX = this.speed;
+
+    // Random Y position within maze bounds using level seed
+    const rng = ((levelSeed * 9301 + 49297) % 233280) / 233280;
+    const wallY = HUD_HEIGHT + this.wallH / 2 + rng * (mazeH - this.wallH);
+
+    this.minX = this.wallW / 2;
+    this.maxX = GAME_WIDTH - this.wallW / 2;
+
     if (!scene.textures.exists('px')) {
       const g = scene.add.graphics();
       g.fillStyle(0xffffff, 1);
@@ -25,57 +37,34 @@ export class CrushingWall {
       g.destroy();
     }
 
-    // Visual rectangle
-    this.wall = scene.add.rectangle(-w / 2, HUD_HEIGHT + h / 2, w, h, 0xcc0000).setDepth(5);
+    // Visual: red wall with dark stripes
+    this.wall = scene.add.rectangle(this.minX, wallY, this.wallW, this.wallH, 0xcc0000).setDepth(5);
 
-    // Physics image at same position
-    this.physWall = scene.physics.add.image(-w / 2, HUD_HEIGHT + h / 2, 'px').setVisible(false).setDepth(5);
+    // Physics body
+    this.physWall = scene.physics.add.image(this.minX, wallY, 'px').setVisible(false).setDepth(5);
     const body = this.physWall.body as Phaser.Physics.Arcade.Body;
-    body.setSize(w, h);
+    body.setSize(this.wallW, this.wallH);
     body.setImmovable(true);
+    body.allowGravity = false;
+
     this.wallObj = this.physWall;
   }
 
   update(delta: number) {
-    if (this.crushing) return;
-    this.timer += delta;
-    if (this.timer >= this.cooldown) {
-      this.timer = 0;
-      this.startCrush();
+    const dt = delta / 1000;
+    let newX = this.wall.x + this.velX * dt;
+
+    if (newX >= this.maxX) {
+      newX = this.maxX;
+      this.velX = -this.speed;
+    } else if (newX <= this.minX) {
+      newX = this.minX;
+      this.velX = this.speed;
     }
-  }
 
-  private startCrush() {
-    this.crushing = true;
-    const h = GAME_HEIGHT - HUD_HEIGHT;
-    const w = TILE_SIZE * 3;
-    const targetX = GAME_WIDTH * 0.6;
-
-    this.scene.tweens.add({
-      targets: [this.wall, this.physWall],
-      x: targetX,
-      duration: 600,
-      ease: 'Power2',
-      onUpdate: () => {
-        const body = this.physWall.body as Phaser.Physics.Arcade.Body;
-        body.reset(this.physWall.x, this.physWall.y);
-      },
-      onComplete: () => {
-        this.scene.time.delayedCall(500, () => {
-          this.scene.tweens.add({
-            targets: [this.wall, this.physWall],
-            x: -w / 2,
-            duration: 500,
-            ease: 'Power1',
-            onUpdate: () => {
-              const body = this.physWall.body as Phaser.Physics.Arcade.Body;
-              body.reset(this.physWall.x, this.physWall.y);
-            },
-            onComplete: () => { this.crushing = false; }
-          });
-        });
-      }
-    });
+    this.wall.x = newX;
+    this.physWall.x = newX;
+    (this.physWall.body as Phaser.Physics.Arcade.Body).reset(newX, this.physWall.y);
   }
 
   destroy() {

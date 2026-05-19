@@ -99,7 +99,7 @@ export class GameScene extends Phaser.Scene {
       this.placeSaws();
     }
     if (this.levelConfig.hasWall) {
-      this.crushingWall = new CrushingWall(this, this.levelConfig.wallCooldown);
+      this.crushingWall = new CrushingWall(this, this.levelConfig.wallCooldown, this.levelConfig.mazeSeed);
       this.physics.add.overlap(this.player, this.crushingWall.wallObj, () => {
         this.onPlayerHit();
       });
@@ -234,9 +234,11 @@ export class GameScene extends Phaser.Scene {
       const sx = tile.col * TILE_SIZE + TILE_SIZE / 2;
       const sy = HUD_HEIGHT + tile.row * TILE_SIZE + TILE_SIZE / 2;
       const saw = new SpinningSaw(this, sx, sy);
+      saw.setTarget(this.player);
       this.saws.push(saw);
 
-      this.physics.add.overlap(this.player, saw, () => {
+      this.physics.add.collider(saw.physicsObj, this.walls);
+      this.physics.add.overlap(this.player, saw.physicsObj, () => {
         this.onPlayerHit();
       });
     }
@@ -265,6 +267,21 @@ export class GameScene extends Phaser.Scene {
       fontSize: '14px',
       color: '#ffffff',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(12);
+
+    // Exit button
+    const exitBg = this.add.rectangle(GAME_WIDTH - 104, HUD_HEIGHT / 2, 56, 36, 0x880000)
+      .setScrollFactor(0).setDepth(11).setInteractive({ useHandCursor: true });
+    this.add.text(GAME_WIDTH - 104, HUD_HEIGHT / 2, 'EXIT', {
+      ...TEXT_STYLE,
+      fontSize: '15px',
+      color: '#ffffff',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(12);
+    exitBg.on('pointerdown', () => {
+      audioManager.stopMusic();
+      this.scene.start('MainMenuScene');
+    });
+    exitBg.on('pointerover', () => exitBg.setFillStyle(0xaa0000));
+    exitBg.on('pointerout', () => exitBg.setFillStyle(0x880000));
 
     // Pause/Settings button
     const pauseBtn = this.add.container(GAME_WIDTH - 36, HUD_HEIGHT / 2).setScrollFactor(0).setDepth(11);
@@ -379,15 +396,29 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    // Input direction
-    let dirX = this.joystick.dirX;
-    let dirY = this.joystick.dirY;
+    // 4-direction only — keyboard takes priority, then joystick snapped to dominant axis
+    let dirX = 0;
+    let dirY = 0;
 
-    if (this.cursors.left.isDown || this.wasd.left.isDown) dirX = -1;
-    else if (this.cursors.right.isDown || this.wasd.right.isDown) dirX = 1;
-
-    if (this.cursors.up.isDown || this.wasd.up.isDown) dirY = -1;
-    else if (this.cursors.down.isDown || this.wasd.down.isDown) dirY = 1;
+    if (this.cursors.left.isDown || this.wasd.left.isDown) {
+      dirX = -1;
+    } else if (this.cursors.right.isDown || this.wasd.right.isDown) {
+      dirX = 1;
+    } else if (this.cursors.up.isDown || this.wasd.up.isDown) {
+      dirY = -1;
+    } else if (this.cursors.down.isDown || this.wasd.down.isDown) {
+      dirY = 1;
+    } else {
+      const jx = this.joystick.dirX;
+      const jy = this.joystick.dirY;
+      if (Math.abs(jx) > 0.25 || Math.abs(jy) > 0.25) {
+        if (Math.abs(jx) >= Math.abs(jy)) {
+          dirX = jx > 0 ? 1 : -1;
+        } else {
+          dirY = jy > 0 ? 1 : -1;
+        }
+      }
+    }
 
     this.player.move(dirX, dirY);
 
