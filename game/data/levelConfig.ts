@@ -5,6 +5,8 @@ export interface LevelConfig {
   sawCount: number;
   hasWall: boolean;
   wallCooldown: number;
+  wallDiagonal: boolean;
+  hasSlime: boolean;
   mazeSeed: number;
 }
 
@@ -19,9 +21,11 @@ export function getLevelConfig(level: number): LevelConfig {
     level,
     mazeColor: c.hex,
     mazeColorName: c.name,
-    sawCount: level >= 5 ? (level - 4) : 0,
-    hasWall: level >= 5,
-    wallCooldown: level >= 5 ? Math.max(0.4, 3.0 - (level - 5) * 0.1) : 3.0,
+    sawCount: level >= 3 ? (level - 2) : 0,
+    hasWall: level >= 3,
+    wallCooldown: level >= 3 ? Math.max(0.4, 3.0 - (level - 3) * 0.1) : 3.0,
+    wallDiagonal: level >= 5,
+    hasSlime: level >= 5,
     mazeSeed: level * 31337 + 999,
   };
 }

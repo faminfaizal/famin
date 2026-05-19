@@ -27,6 +27,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   hp = 200;
   maxHp = 200;
   alive = true;
+  slowed = false;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     createPlayerTexture(scene);
@@ -40,9 +41,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   move(dirX: number, dirY: number) {
     if (!this.alive) return;
+    const speed = this.slowed ? PLAYER_SPEED * 0.5 : PLAYER_SPEED;
     const len = Math.sqrt(dirX * dirX + dirY * dirY);
     if (len > 0.1) {
-      this.setVelocity((dirX / len) * PLAYER_SPEED, (dirY / len) * PLAYER_SPEED);
+      this.setVelocity((dirX / len) * speed, (dirY / len) * speed);
       if (dirX < -0.1) this.setFlipX(true);
       else if (dirX > 0.1) this.setFlipX(false);
     } else {

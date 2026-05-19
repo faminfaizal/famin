@@ -6,6 +6,7 @@ import { Player } from '../objects/Player';
 import { VirtualJoystick } from '../objects/VirtualJoystick';
 import { SpinningSaw } from '../objects/SpinningSaw';
 import { CrushingWall } from '../objects/CrushingWall';
+import { SlimeDrop } from '../objects/SlimeDrop';
 import { Settings } from '../Settings';
 import { audioManager } from '../AudioManager';
 
@@ -28,6 +29,7 @@ export class GameScene extends Phaser.Scene {
   private saws: SpinningSaw[] = [];
   private crushingWall: CrushingWall | null = null;
   private levelText!: Phaser.GameObjects.Text;
+  private slimeDrop: SlimeDrop | null = null;
   private candyCollected = false;
   private playerStartX = 0;
   private playerStartY = 0;
@@ -41,6 +43,7 @@ export class GameScene extends Phaser.Scene {
     this.candyCollected = false;
     this.saws = [];
     this.crushingWall = null;
+    this.slimeDrop = null;
   }
 
   create() {
@@ -99,10 +102,14 @@ export class GameScene extends Phaser.Scene {
       this.placeSaws();
     }
     if (this.levelConfig.hasWall) {
-      this.crushingWall = new CrushingWall(this, this.levelConfig.wallCooldown, this.levelConfig.mazeSeed);
+      this.crushingWall = new CrushingWall(this, this.levelConfig.wallCooldown, this.levelConfig.mazeSeed, this.levelConfig.wallDiagonal);
       this.physics.add.overlap(this.player, this.crushingWall.wallObj, () => {
         this.onPlayerHit();
       });
+    }
+
+    if (this.levelConfig.hasSlime) {
+      this.slimeDrop = new SlimeDrop(this, () => this.player);
     }
 
     // Physics colliders/overlaps
@@ -327,6 +334,7 @@ export class GameScene extends Phaser.Scene {
     const completeText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'Level Complete!', {
       ...TEXT_STYLE,
       fontSize: '48px',
+      color: '#ffff00',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(20);
 
     this.tweens.add({
@@ -420,9 +428,15 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    // Reset slowed every frame; slimeDrop.isPlayerOnSlime sets it back if on puddle
+    this.player.slowed = false;
+    if (this.slimeDrop) {
+      this.slimeDrop.update(delta);
+      this.player.slowed = this.slimeDrop.isPlayerOnSlime(this.player.x, this.player.y);
+    }
+
     this.player.move(dirX, dirY);
 
-    // Update obstacles
     for (const saw of this.saws) {
       saw.update(delta);
     }
