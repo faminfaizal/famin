@@ -3,7 +3,7 @@ import { PLAYER_SPEED } from '../config';
 
 export function createPlayerTexture(scene: Phaser.Scene) {
   if (scene.textures.exists('player')) return;
-  const g = scene.make.graphics({ x: 0, y: 0, add: false });
+  const g = scene.make.graphics({ x: 0, y: 0 });
   // Body (orange)
   g.fillStyle(0xff8800, 1); g.fillRect(4, 2, 24, 22);
   // Eyes
@@ -50,7 +50,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  stop() { this.setVelocity(0, 0); }
+  stopMoving() { this.setVelocity(0, 0); }
 
   die(onRespawn: () => void) {
     if (!this.alive) return;
