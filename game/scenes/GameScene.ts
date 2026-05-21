@@ -33,6 +33,9 @@ export class GameScene extends Phaser.Scene {
   private candyCollected = false;
   private playerStartX = 0;
   private playerStartY = 0;
+  private lives = 3;
+  private heartTexts: Phaser.GameObjects.Text[] = [];
+  private gameOverActive = false;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -44,6 +47,9 @@ export class GameScene extends Phaser.Scene {
     this.saws = [];
     this.crushingWall = null;
     this.slimeDrop = null;
+    this.lives = 3;
+    this.heartTexts = [];
+    this.gameOverActive = false;
   }
 
   create() {
@@ -179,7 +185,6 @@ export class GameScene extends Phaser.Scene {
 
   private drawFloor() {
     const g = this.add.graphics().setDepth(0);
-    // Floor color - slightly lighter than background
     g.fillStyle(0x333333, 1);
 
     for (let r = 0; r < this.mazeData.rows; r++) {
@@ -214,14 +219,12 @@ export class GameScene extends Phaser.Scene {
     const candyCol = this.mazeData.candyPos.col;
     const candyRow = this.mazeData.candyPos.row;
 
-    // Filter floor tiles that are far enough from start and end
     const candidates = this.mazeData.floorTiles.filter(t => {
       const distFromStart = Math.abs(t.col - playerCol) + Math.abs(t.row - playerRow);
       const distFromEnd = Math.abs(t.col - candyCol) + Math.abs(t.row - candyRow);
-      return distFromStart > 4 && distFromEnd > 4;
+      return distFromStart > 6 && distFromEnd > 4;
     });
 
-    // Shuffle candidates using level seed
     let seedVal = this.levelConfig.mazeSeed + 12345;
     const shuffle = (arr: typeof candidates) => {
       const a = [...arr];
@@ -253,18 +256,28 @@ export class GameScene extends Phaser.Scene {
 
   private createHUD() {
     // HUD background bar
-    const hudBg = this.add.rectangle(GAME_WIDTH / 2, HUD_HEIGHT / 2, GAME_WIDTH, HUD_HEIGHT, 0x111111)
+    this.add.rectangle(GAME_WIDTH / 2, HUD_HEIGHT / 2, GAME_WIDTH, HUD_HEIGHT, 0x111111)
       .setScrollFactor(0)
       .setDepth(10);
 
-    // Level text
-    this.levelText = this.add.text(20, HUD_HEIGHT / 2, `Level ${this.level} / 20`, {
+    // Level text — upper row
+    this.levelText = this.add.text(16, 18, `Level ${this.level} / 20`, {
       ...TEXT_STYLE,
-      fontSize: '20px',
+      fontSize: '18px',
       color: '#ffffff',
     }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(11);
 
-    // Maze color indicator
+    // Hearts — lower row (3 lives)
+    for (let i = 0; i < 3; i++) {
+      const ht = this.add.text(16 + i * 26, 56, '♥', {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '22px',
+        color: '#ff4444',
+      }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(11);
+      this.heartTexts.push(ht);
+    }
+
+    // Maze color indicator — center
     const colorCircle = this.add.graphics().setScrollFactor(0).setDepth(11);
     colorCircle.fillStyle(this.levelConfig.mazeColor, 1);
     colorCircle.fillCircle(GAME_WIDTH / 2, HUD_HEIGHT / 2, 12);
@@ -293,22 +306,24 @@ export class GameScene extends Phaser.Scene {
     // Pause/Settings button
     const pauseBtn = this.add.container(GAME_WIDTH - 36, HUD_HEIGHT / 2).setScrollFactor(0).setDepth(11);
     const pauseBg = this.add.rectangle(0, 0, 52, 40, 0x333333).setInteractive({ useHandCursor: true });
-    const pauseText = this.add.text(0, 0, '⏸', {
-      fontSize: '22px',
-    }).setOrigin(0.5);
+    const pauseText = this.add.text(0, 0, '⏸', { fontSize: '22px' }).setOrigin(0.5);
     const pauseBorder = this.add.graphics();
     pauseBorder.lineStyle(2, 0x888888, 1);
     pauseBorder.strokeRect(-26, -20, 52, 40);
     pauseBtn.add([pauseBg, pauseBorder, pauseText]);
 
-    pauseBg.on('pointerdown', () => {
-      this.scene.launch('SettingsScene');
-    });
+    pauseBg.on('pointerdown', () => { this.scene.launch('SettingsScene'); });
     pauseBg.on('pointerover', () => pauseBg.setFillStyle(0x555555));
     pauseBg.on('pointerout', () => pauseBg.setFillStyle(0x333333));
 
     // HUD divider line
     this.add.graphics().setScrollFactor(0).setDepth(10).lineStyle(2, 0x444444, 1).lineBetween(0, HUD_HEIGHT, GAME_WIDTH, HUD_HEIGHT);
+  }
+
+  private updateHeartsDisplay() {
+    for (let i = 0; i < this.heartTexts.length; i++) {
+      this.heartTexts[i].setColor(i < this.lives ? '#ff4444' : '#333333');
+    }
   }
 
   private onCandyCollected() {
@@ -320,10 +335,8 @@ export class GameScene extends Phaser.Scene {
     const candyY = this.candy.y;
     this.candy.destroy();
 
-    // Confetti particles
     this.spawnConfetti(candyX, candyY);
 
-    // Player bounce
     this.tweens.add({
       targets: this.player,
       y: this.player.y - 20,
@@ -332,7 +345,6 @@ export class GameScene extends Phaser.Scene {
       repeat: 1,
     });
 
-    // Level complete text
     const completeText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'Level Complete!', {
       ...TEXT_STYLE,
       fontSize: '48px',
@@ -346,14 +358,12 @@ export class GameScene extends Phaser.Scene {
       delay: 600,
     });
 
-    // Update save progress
     const settings = Settings.getInstance();
     if (settings.saveProgress) {
       settings.savedLevel = Math.max(settings.savedLevel, this.level + 1);
       settings.save();
     }
 
-    // Transition
     this.time.delayedCall(2200, () => {
       if (this.level === 19) {
         this.scene.start('BossWarningScene');
@@ -392,21 +402,108 @@ export class GameScene extends Phaser.Scene {
   }
 
   private onPlayerHit() {
-    if (!this.player.alive) return;
+    if (!this.player.alive || this.gameOverActive || this.candyCollected) return;
     audioManager.playDeath();
+    this.lives--;
+    this.updateHeartsDisplay();
+
+    if (this.lives <= 0) {
+      this.gameOverActive = true;
+      this.player.alive = false;
+      this.showGameOver();
+      return;
+    }
+
     this.player.die(() => {
       this.player.setPosition(this.playerStartX, this.playerStartY);
     });
   }
 
+  private showGameOver() {
+    const respawnLevel = Math.max(1, this.level - 1);
+    let timeLeft = 10;
+
+    // Dark overlay
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.78)
+      .setDepth(25).setScrollFactor(0);
+
+    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 100, 'GAME OVER', {
+      ...TEXT_STYLE,
+      fontSize: '54px',
+      color: '#ff2222',
+    }).setOrigin(0.5).setDepth(26).setScrollFactor(0);
+
+    // Countdown label
+    const countdownText = this.add.text(
+      GAME_WIDTH / 2, GAME_HEIGHT / 2 - 38,
+      `Restarting at Level 1 in ${timeLeft}s...`,
+      { fontFamily: 'Arial, sans-serif', fontSize: '17px', color: '#ffaaaa' }
+    ).setOrigin(0.5).setDepth(26).setScrollFactor(0);
+
+    // Respawn button
+    const btnY = GAME_HEIGHT / 2 + 32;
+    const btnBg = this.add.rectangle(GAME_WIDTH / 2, btnY, 290, 60, 0x22aa55)
+      .setDepth(26).setScrollFactor(0).setInteractive({ useHandCursor: true });
+    this.add.graphics().setDepth(26).setScrollFactor(0)
+      .lineStyle(3, 0x000000, 1)
+      .strokeRect(GAME_WIDTH / 2 - 145, btnY - 30, 290, 60);
+    this.add.text(GAME_WIDTH / 2, btnY, `Respawn at Level ${respawnLevel}`, {
+      ...TEXT_STYLE,
+      fontSize: '19px',
+      color: '#ffffff',
+    }).setOrigin(0.5).setDepth(27).setScrollFactor(0);
+
+    // Main menu button
+    const menuY = btnY + 72;
+    const menuBg = this.add.rectangle(GAME_WIDTH / 2, menuY, 200, 48, 0x444444)
+      .setDepth(26).setScrollFactor(0).setInteractive({ useHandCursor: true });
+    this.add.graphics().setDepth(26).setScrollFactor(0)
+      .lineStyle(3, 0x000000, 1)
+      .strokeRect(GAME_WIDTH / 2 - 100, menuY - 24, 200, 48);
+    this.add.text(GAME_WIDTH / 2, menuY, 'Main Menu', {
+      ...TEXT_STYLE,
+      fontSize: '16px',
+      color: '#ffffff',
+    }).setOrigin(0.5).setDepth(27).setScrollFactor(0);
+
+    const countdownEvent = this.time.addEvent({
+      delay: 1000,
+      repeat: 9,
+      callback: () => {
+        timeLeft--;
+        if (timeLeft > 0) {
+          countdownText.setText(`Restarting at Level 1 in ${timeLeft}s...`);
+        } else {
+          audioManager.stopMusic();
+          this.scene.start('GameScene', { level: 1 });
+        }
+      },
+    });
+
+    btnBg.on('pointerdown', () => {
+      countdownEvent.remove();
+      audioManager.stopMusic();
+      this.scene.start('GameScene', { level: respawnLevel });
+    });
+    btnBg.on('pointerover', () => btnBg.setFillStyle(0x33cc66));
+    btnBg.on('pointerout', () => btnBg.setFillStyle(0x22aa55));
+
+    menuBg.on('pointerdown', () => {
+      countdownEvent.remove();
+      audioManager.stopMusic();
+      this.scene.start('MainMenuScene');
+    });
+    menuBg.on('pointerover', () => menuBg.setFillStyle(0x666666));
+    menuBg.on('pointerout', () => menuBg.setFillStyle(0x444444));
+  }
+
   update(_time: number, delta: number) {
     if (!this.player || !this.player.alive) return;
-    if (this.candyCollected) {
+    if (this.candyCollected || this.gameOverActive) {
       this.player.stopMoving();
       return;
     }
 
-    // 4-direction only — keyboard takes priority, then joystick snapped to dominant axis
     let dirX = 0;
     let dirY = 0;
 
@@ -430,7 +527,6 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    // Reset slowed every frame; slimeDrop.isPlayerOnSlime sets it back if on puddle
     this.player.slowed = false;
     if (this.slimeDrop) {
       this.slimeDrop.update(delta);
