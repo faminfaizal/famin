@@ -40,6 +40,9 @@ export class SpinningSaw {
   private speed = 55;
   private dirTimer = 0;
   private readonly DIR_INTERVAL = 420;
+  private lastDirX = 1;
+  private lastDirY = 0;
+  private blockCooldown = 0;
   readonly physicsObj: Phaser.Physics.Arcade.Image;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
@@ -68,21 +71,48 @@ export class SpinningSaw {
 
   update(delta: number) {
     if (!this.player) return;
-    // Keep saw within maze (not above HUD)
     if (this.sprite.y < HUD_HEIGHT + R) {
       this.sprite.setY(HUD_HEIGHT + R + 2);
     }
+
+    const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+    const actualSpeed = Math.sqrt(
+      body.velocity.x * body.velocity.x + body.velocity.y * body.velocity.y
+    );
+
     this.dirTimer += delta;
-    if (this.dirTimer >= this.DIR_INTERVAL) {
+    this.blockCooldown = Math.max(0, this.blockCooldown - delta);
+
+    // Blocked = velocity nearly gone but we expect it to be moving
+    const isBlocked = actualSpeed < this.speed * 0.3 && this.blockCooldown <= 0;
+
+    if (this.dirTimer >= this.DIR_INTERVAL || isBlocked) {
       this.dirTimer = 0;
       const dx = this.player.x - this.sprite.x;
       const dy = this.player.y - this.sprite.y;
-      // Move in the dominant axis toward the player (Pacman ghost style)
-      if (Math.abs(dx) >= Math.abs(dy)) {
-        this.sprite.setVelocity(dx > 0 ? this.speed : -this.speed, 0);
+
+      if (isBlocked) {
+        // Saw hit a wall — switch to perpendicular axis biased toward player
+        this.blockCooldown = 150;
+        if (this.lastDirX !== 0) {
+          this.lastDirX = 0;
+          this.lastDirY = dy >= 0 ? 1 : -1;
+        } else {
+          this.lastDirX = dx >= 0 ? 1 : -1;
+          this.lastDirY = 0;
+        }
       } else {
-        this.sprite.setVelocity(0, dy > 0 ? this.speed : -this.speed);
+        // Normal: chase player on dominant axis
+        if (Math.abs(dx) >= Math.abs(dy)) {
+          this.lastDirX = dx > 0 ? 1 : -1;
+          this.lastDirY = 0;
+        } else {
+          this.lastDirX = 0;
+          this.lastDirY = dy > 0 ? 1 : -1;
+        }
       }
+
+      this.sprite.setVelocity(this.lastDirX * this.speed, this.lastDirY * this.speed);
     }
   }
 
