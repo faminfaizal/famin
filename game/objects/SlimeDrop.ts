@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { HUD_HEIGHT } from '../config';
 
-const PUDDLE_SIZE = 96;              // 3×3 tiles (3 × TILE_SIZE 32px)
+const PUDDLE_SIZE = 120;             // 3×3 tiles (3 × TILE_SIZE 40px)
 const DROP_CYCLE = 4500;             // ms between puddle spawns
 const WARNING_DURATION = 1100;       // ms warning is shown before drop
 const PUDDLE_LIFETIME = 8000;        // ms each puddle persists
@@ -106,7 +106,7 @@ export class SlimeDrop {
   private spawnPuddle(cx: number, cy: number) {
     // Clamp so puddle stays inside maze area
     const half = PUDDLE_SIZE / 2;
-    const clampedX = Phaser.Math.Clamp(cx, half, 800 - half);
+    const clampedX = Phaser.Math.Clamp(cx, half, 760 - half);
     const clampedY = Phaser.Math.Clamp(cy, HUD_HEIGHT + half, 600 - half);
 
     const g = this.scene.add.graphics().setDepth(2).setPosition(clampedX, clampedY);

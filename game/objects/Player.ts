@@ -6,9 +6,9 @@ export function createPlayerTexture(scene: Phaser.Scene) {
   const g = scene.make.graphics({ x: 0, y: 0 });
   // Body (orange)
   g.fillStyle(0xff8800, 1); g.fillRect(4, 2, 24, 22);
-  // Eyes
-  g.fillStyle(0xffffff, 1); g.fillRect(7, 5, 8, 8); g.fillRect(17, 5, 8, 8);
-  g.fillStyle(0x000000, 1); g.fillRect(9, 7, 4, 4); g.fillRect(19, 7, 4, 4);
+  // Eyes — cute black dots with white shine
+  g.fillStyle(0x000000, 1); g.fillCircle(11, 9, 5); g.fillCircle(21, 9, 5);
+  g.fillStyle(0xffffff, 1); g.fillCircle(13, 7, 2); g.fillCircle(23, 7, 2);
   // Eyebrows
   g.fillStyle(0x994400, 1); g.fillRect(7, 3, 8, 2); g.fillRect(17, 3, 8, 2);
   // Mouth (smile)
