@@ -9,10 +9,8 @@ function createSawTexture(scene: Phaser.Scene) {
   const cx = TEXTURE_SIZE / 2;
   const cy = TEXTURE_SIZE / 2;
   const g = scene.make.graphics({});
-  // Grey base disc
   g.fillStyle(0x999999, 1);
   g.fillCircle(cx, cy, R);
-  // Teeth
   g.fillStyle(0xcccccc, 1);
   for (let i = 0; i < 8; i++) {
     const a = (i / 8) * Math.PI * 2;
@@ -24,10 +22,8 @@ function createSawTexture(scene: Phaser.Scene) {
     const by = cy + Math.sin(a + 0.32) * (R - 1);
     g.fillTriangle(ax, ay, bx, by, tx, ty);
   }
-  // Shine
   g.fillStyle(0xeeeeee, 0.55);
   g.fillCircle(cx - R * 0.35, cy - R * 0.35, R * 0.28);
-  // Centre bolt
   g.fillStyle(0x444444, 1);
   g.fillCircle(cx, cy, 4);
   g.generateTexture('saw', TEXTURE_SIZE, TEXTURE_SIZE);
@@ -36,10 +32,7 @@ function createSawTexture(scene: Phaser.Scene) {
 
 export class SpinningSaw {
   private sprite: Phaser.Physics.Arcade.Image;
-  private player: { x: number; y: number } | null = null;
   private speed = 55;
-  private dirTimer = 0;
-  private readonly DIR_INTERVAL = 420;
   private lastDirX = 1;
   private lastDirY = 0;
   private blockCooldown = 0;
@@ -49,13 +42,18 @@ export class SpinningSaw {
     createSawTexture(scene);
     this.sprite = scene.physics.add.image(x, y, 'saw').setDepth(3);
     const body = this.sprite.body as Phaser.Physics.Arcade.Body;
-    // Centre the circle hitbox inside the 44×44 texture
     body.setCircle(R, TEXTURE_SIZE / 2 - R, TEXTURE_SIZE / 2 - R);
     body.allowGravity = false;
     body.setMaxVelocity(this.speed);
     this.physicsObj = this.sprite;
 
-    // Continuous spin via tween
+    // Random initial direction
+    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    const d = dirs[Math.floor(Math.random() * 4)];
+    this.lastDirX = d[0];
+    this.lastDirY = d[1];
+    this.sprite.setVelocity(this.lastDirX * this.speed, this.lastDirY * this.speed);
+
     scene.tweens.add({
       targets: this.sprite,
       angle: 360,
@@ -65,12 +63,7 @@ export class SpinningSaw {
     });
   }
 
-  setTarget(target: { x: number; y: number }) {
-    this.player = target;
-  }
-
   update(delta: number) {
-    if (!this.player) return;
     if (this.sprite.y < HUD_HEIGHT + R) {
       this.sprite.setY(HUD_HEIGHT + R + 2);
     }
@@ -80,38 +73,19 @@ export class SpinningSaw {
       body.velocity.x * body.velocity.x + body.velocity.y * body.velocity.y
     );
 
-    this.dirTimer += delta;
     this.blockCooldown = Math.max(0, this.blockCooldown - delta);
-
-    // Blocked = velocity nearly gone but we expect it to be moving
     const isBlocked = actualSpeed < this.speed * 0.3 && this.blockCooldown <= 0;
 
-    if (this.dirTimer >= this.DIR_INTERVAL || isBlocked) {
-      this.dirTimer = 0;
-      const dx = this.player.x - this.sprite.x;
-      const dy = this.player.y - this.sprite.y;
-
-      if (isBlocked) {
-        // Saw hit a wall — switch to perpendicular axis biased toward player
-        this.blockCooldown = 150;
-        if (this.lastDirX !== 0) {
-          this.lastDirX = 0;
-          this.lastDirY = dy >= 0 ? 1 : -1;
-        } else {
-          this.lastDirX = dx >= 0 ? 1 : -1;
-          this.lastDirY = 0;
-        }
+    if (isBlocked) {
+      this.blockCooldown = 150;
+      // Randomly turn perpendicular — gives natural maze-patrolling behaviour
+      if (this.lastDirX !== 0) {
+        this.lastDirX = 0;
+        this.lastDirY = Math.random() < 0.5 ? 1 : -1;
       } else {
-        // Normal: chase player on dominant axis
-        if (Math.abs(dx) >= Math.abs(dy)) {
-          this.lastDirX = dx > 0 ? 1 : -1;
-          this.lastDirY = 0;
-        } else {
-          this.lastDirX = 0;
-          this.lastDirY = dy > 0 ? 1 : -1;
-        }
+        this.lastDirX = Math.random() < 0.5 ? 1 : -1;
+        this.lastDirY = 0;
       }
-
       this.sprite.setVelocity(this.lastDirX * this.speed, this.lastDirY * this.speed);
     }
   }
