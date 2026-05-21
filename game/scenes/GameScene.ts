@@ -100,8 +100,8 @@ export class GameScene extends Phaser.Scene {
       right: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D),
     };
 
-    // Joystick — floating, appears at touch/click point
-    this.joystick = new VirtualJoystick(this);
+    // Joystick — floating, only activates below the HUD
+    this.joystick = new VirtualJoystick(this, HUD_HEIGHT);
 
     // Obstacles for level >= 5
     if (this.levelConfig.sawCount > 0) {
@@ -244,7 +244,6 @@ export class GameScene extends Phaser.Scene {
       const sx = tile.col * TILE_SIZE + TILE_SIZE / 2;
       const sy = HUD_HEIGHT + tile.row * TILE_SIZE + TILE_SIZE / 2;
       const saw = new SpinningSaw(this, sx, sy);
-      saw.setTarget(this.player);
       this.saws.push(saw);
 
       this.physics.add.collider(saw.physicsObj, this.walls);

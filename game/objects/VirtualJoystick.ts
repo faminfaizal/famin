@@ -6,14 +6,16 @@ export class VirtualJoystick {
   private scene: Phaser.Scene;
   private baseX = 0;
   private baseY = 0;
+  private minY: number;
   private maxDist = 45;
   private base: Phaser.GameObjects.Graphics;
   private knob: Phaser.GameObjects.Graphics;
   private active = false;
   private pid = -1;
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, minY = 0) {
     this.scene = scene;
+    this.minY = minY;
 
     this.base = scene.add.graphics().setDepth(20).setVisible(false).setScrollFactor(0);
     this.base.fillStyle(0x000000, 0.25);
@@ -29,7 +31,8 @@ export class VirtualJoystick {
   }
 
   private down(p: Phaser.Input.Pointer) {
-    if (!this.active) {
+    // Only activate inside the maze area — not over HUD buttons
+    if (!this.active && p.y > this.minY) {
       this.active = true;
       this.pid = p.id;
       this.baseX = p.x;
