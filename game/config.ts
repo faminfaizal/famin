@@ -6,12 +6,12 @@ import { BossWarningScene } from './scenes/BossWarningScene';
 import { BossFightScene } from './scenes/BossFightScene';
 import { VictoryScene } from './scenes/VictoryScene';
 
-export const GAME_WIDTH = 800;
+export const GAME_WIDTH = 760;
 export const GAME_HEIGHT = 600;
-export const TILE_SIZE = 32;
-export const MAZE_COLS = 25;
-export const MAZE_ROWS = 17;
-export const HUD_HEIGHT = 56;
+export const TILE_SIZE = 40;
+export const MAZE_COLS = 19;
+export const MAZE_ROWS = 13;
+export const HUD_HEIGHT = 80;
 export const PLAYER_SPEED = 160;
 
 export function createGameConfig(): Phaser.Types.Core.GameConfig {

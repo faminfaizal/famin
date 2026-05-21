@@ -12,10 +12,9 @@ function createBossTexture(scene: Phaser.Scene) {
   const g = scene.make.graphics({ x: 0, y: 0 });
   // Body (dark red/maroon)
   g.fillStyle(0x8b0000, 1); g.fillRect(8, 4, 48, 44);
-  // Eyes
-  g.fillStyle(0xffffff, 1); g.fillRect(14, 12, 14, 12); g.fillRect(36, 12, 14, 12);
-  g.fillStyle(0xff2222, 1); g.fillRect(17, 15, 8, 6); g.fillRect(39, 15, 8, 6);
-  g.fillStyle(0x000000, 1); g.fillRect(18, 16, 4, 4); g.fillRect(40, 16, 4, 4);
+  // Eyes — cute black dots with white shine
+  g.fillStyle(0x000000, 1); g.fillCircle(21, 18, 7); g.fillCircle(43, 18, 7);
+  g.fillStyle(0xffffff, 1); g.fillCircle(25, 14, 3); g.fillCircle(47, 14, 3);
   // Angry eyebrows
   g.fillStyle(0x000000, 1);
   g.fillRect(12, 6, 8, 4); g.fillRect(16, 8, 8, 4);

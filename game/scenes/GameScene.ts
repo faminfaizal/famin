@@ -94,8 +94,8 @@ export class GameScene extends Phaser.Scene {
       right: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D),
     };
 
-    // Joystick
-    this.joystick = new VirtualJoystick(this, 90, 545);
+    // Joystick — floating, appears at touch/click point
+    this.joystick = new VirtualJoystick(this);
 
     // Obstacles for level >= 5
     if (this.levelConfig.sawCount > 0) {
