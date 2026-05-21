@@ -46,6 +46,27 @@ export function generateMaze(cols: number, rows: number, seed: number): MazeData
   }
   dfs(0, 0);
 
+  // Remove ~25% of remaining internal walls to create loops so players always
+  // have multiple routes around obstacles.
+  const extraWalls: Array<{ r: number; c: number }> = [];
+  for (let cr = 0; cr < cellRows; cr++) {
+    for (let cc = 0; cc < cellCols; cc++) {
+      if (cc + 1 < cellCols) {
+        const wr = cr * 2 + 1, wc = cc * 2 + 2;
+        if (grid[wr][wc] === 1) extraWalls.push({ r: wr, c: wc });
+      }
+      if (cr + 1 < cellRows) {
+        const wr = cr * 2 + 2, wc = cc * 2 + 1;
+        if (grid[wr][wc] === 1) extraWalls.push({ r: wr, c: wc });
+      }
+    }
+  }
+  const shuffledWalls = rng.shuffle(extraWalls);
+  const removeCount = Math.floor(extraWalls.length * 0.25);
+  for (let i = 0; i < removeCount; i++) {
+    grid[shuffledWalls[i].r][shuffledWalls[i].c] = 0;
+  }
+
   const floorTiles: { col: number; row: number }[] = [];
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {

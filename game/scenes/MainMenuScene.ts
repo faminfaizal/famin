@@ -65,7 +65,14 @@ export class MainMenuScene extends Phaser.Scene {
     subtitle1.setDepth(1);
 
     // Subtitle
-    this.add.text(GAME_WIDTH / 2, 205, 'Can you survive all 20 levels?', {
+    this.add.text(GAME_WIDTH / 2, 200, 'by Amaani Fathiya', {
+      fontFamily: "'Arial Black', Arial, sans-serif",
+      fontStyle: 'italic',
+      fontSize: '17px',
+      color: '#334455',
+    }).setOrigin(0.5).setDepth(1);
+
+    this.add.text(GAME_WIDTH / 2, 232, 'Can you survive all 20 levels?', {
       ...TEXT_STYLE,
       fontSize: '20px',
     }).setOrigin(0.5);
