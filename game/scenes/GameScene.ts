@@ -393,7 +393,7 @@ export class GameScene extends Phaser.Scene {
 
   private onPlayerHit() {
     if (!this.player.alive) return;
-    audioManager.playHit();
+    audioManager.playDeath();
     this.player.die(() => {
       this.player.setPosition(this.playerStartX, this.playerStartY);
     });

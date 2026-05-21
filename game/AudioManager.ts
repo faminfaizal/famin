@@ -38,6 +38,36 @@ class AudioManager {
   }
 
   playHit() { this.playBeep(120, 0.3, this.sfxGainNode!); }
+
+  playDeath() {
+    if (!this.ctx || !this.sfxGainNode) return;
+    const now = this.ctx.currentTime;
+    // Sad trumpet "wah wah wah waaah" — descending sawtooth notes
+    const notes = [
+      { freq: 392, start: 0,    dur: 0.22 },  // G4
+      { freq: 330, start: 0.25, dur: 0.22 },  // E4
+      { freq: 261, start: 0.50, dur: 0.22 },  // C4
+      { freq: 220, start: 0.75, dur: 0.90 },  // A3 → slides down
+    ];
+    for (const note of notes) {
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.connect(g);
+      g.connect(this.sfxGainNode);
+      osc.frequency.setValueAtTime(note.freq, now + note.start);
+      if (note.start === 0.75) {
+        // Final note slides way down for the "waaah" droop
+        osc.frequency.linearRampToValueAtTime(80, now + note.start + note.dur);
+      }
+      g.gain.setValueAtTime(0, now + note.start);
+      g.gain.linearRampToValueAtTime(0.38, now + note.start + 0.04);
+      g.gain.setValueAtTime(0.32, now + note.start + note.dur * 0.6);
+      g.gain.exponentialRampToValueAtTime(0.001, now + note.start + note.dur);
+      osc.start(now + note.start);
+      osc.stop(now + note.start + note.dur);
+    }
+  }
   playBossAttack() { this.playBeep(80, 0.4, this.sfxGainNode!); }
 
   playVictory() {
